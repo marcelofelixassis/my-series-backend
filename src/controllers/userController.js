@@ -1,36 +1,26 @@
-const express = require("express");
-const router = express.Router();
-const authMiddleware = require('../middlewares/auth');
+const express = require("express"),
+authMiddleware = require('../middlewares/auth');
 
 var UserModel = require('../models/user');
 
-// router.get('/check/token', authMiddleware, (req, res) => {
-//   return res.status(200).send(true);
-// })
+const router = express.Router();
 
-// router.get('/check/token/email', authEmailRecoverMiddleware, (req, res) => {
-//   return res.status(200).send(true);
-// })
-
-router.post('/reset', authMiddleware, async (req, res) => {
-  
-})
-
-router.get('/teste',authMiddleware, async (req, res) => {
-  SeriesModel
-    .fetchAll()
-    .then(function(series) {
-      res.json({ series });
+/**
+ * USER GROUPS
+ */
+router.get('/groups', authMiddleware, async (req, res) => {
+  try {
+    UserModel.forge({id: req.userId})
+    .fetch({withRelated: ['groups']})
+    .then(function(data) {
+      res.status(200).json(data.related('groups'));
+    })
+    .catch((err) => {
+      res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
     });
-});
-
-router.get('/series', async (req, res) => {
-  
-  SeriesModel
-    .fetchAll()
-    .then(function(series) {
-      res.json({ series });
-    });
+  } catch (error) {
+    res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
+  }
 });
 
 module.exports = app => app.use("/user", router);

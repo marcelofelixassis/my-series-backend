@@ -1,8 +1,8 @@
 exports.up = function(knex, Promise) {
     return knex.schema.createTable('groups_users', (t) => {
         t.increments('id').primary();
-        t.integer('fk_groups', 10).unsigned().notNullable().index().references('id').inTable('groups');
-        t.integer('fk_users', 10).unsigned().notNullable().index().references('id').inTable('users');
+        t.integer('group_id', 10).unsigned().notNullable().index().references('id').inTable('groups');
+        t.integer('user_id', 10).unsigned().notNullable().index().references('id').inTable('users');
     });
 };
 

@@ -1,0 +1,8 @@
+{
+    "JWT": {
+        "SECRET" : "5aa53c98a0751702a149865750ec8a01"
+    },
+    "LINK": {
+        "FORGOT_PASSWORD" : "http://localhost:3000/"
+    }
+}
