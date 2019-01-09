@@ -19,9 +19,9 @@ router.post('/register', async (req, res) => {
     return res.send();
   }).catch((err) => {
     if(err.code == "ER_DUP_ENTRY") {
-      return res.status(400).send("E-mail já registrado");
+      return res.status(400).send({ error: "E-mail já registrado" });
     }
-    return res.status(400).send("Falha ao se registrar, tente novamente")
+    return res.status(400).send({ error: "Falha ao se registrar, tente novamente" });
   });
 });
 
@@ -33,11 +33,11 @@ router.post('/login', async (req, res) => {
   const user = await UserModel.checkEmail(email);
  
   if(!user) {
-    return res.status(400).send('E-mail inválido ou incorreto');
+    return res.status(400).send({ error: "E-mail inválido ou incorreto" });
   }
 
   if(!await bcrypt.compare(password, user.get('password'))) {
-    return res.status(400).send('Senha inválida ou incorreta');
+    return res.status(400).send({ error: "Senha inválida ou incorreta" });
   }
 
   return res.send({ 
@@ -53,7 +53,7 @@ router.post('/forgot_password', async (req, res) => {
   const user = await UserModel.checkEmail(email);
 
   if(!user) {
-    return res.status(400).send('E-mail inválido ou incorreto');
+    return res.status(400).send({ error: "E-mail inválido ou incorreto" });
   }else{
     const token = crypto.randomBytes(20).toString('hex');
 
@@ -70,7 +70,7 @@ router.post('/forgot_password', async (req, res) => {
       context: { token },
     }, (err) => {
       if(err) {
-        return res.status(400).send('Erro ao enviar email com dados para resetar senha');
+        return res.status(400).send({ error: "Erro ao enviar email com dados para resetar senha" });
       }
       return res.send();
     })
@@ -87,27 +87,27 @@ router.post('/reset_password', async (req, res) => {
     const user = await UserModel.checkEmail(email);
     
     if(!user) {
-      return res.status(400).send("E-mail inválido ou incorreto");
+      return res.status(400).send({ error: "E-mail inválido ou incorreto" });
     }
 
     if(token !== user.get('password_reset_token')) {
-      return res.status(400).send("Token inválido");
+      return res.status(400).send({ error: "Token inválido" });
     }
 
     const now = new Date();
     if(now > user.get('password_reset_expires')) {
-      return res.status(400).send("Seu token expirou, gere um novo");
+      return res.status(400).send({ error: "Seu token expirou, gere um novo" });
     }
 
     user.set('password', bcrypt.hashSync(password));
     user.save().then(() => {
       return res.send();
     }).catch(() => {
-      return res.status(400).send("Falha ao resetar senha, tente novamente")
+      return res.status(400).send({ error: "Falha ao resetar senha, tente novamente" })
     });
 
   } catch (error) {
-    return res.status(400).send("Falha ao resetar senha, tente novamente");
+    return res.status(400).send({ error: "Falha ao resetar senha, tente novamente" });
   }
 })
 

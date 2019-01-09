@@ -5,24 +5,24 @@ module.exports = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if(!authHeader) {
-        return res.status(401).send('Nenhum token fornecido');
+        return res.status(401).send({ error: 'Nenhum token fornecido' });
     }
 
     const parts = authHeader.split(' ');
 
     if(!parts.length === 2) {
-        return res.status(401).send('Erro token');
+        return res.status(401).send({ error: 'Erro token' });
     }
 
     const [ scheme, token ] = parts;
 
     if(!/^Bearer$/i.test(scheme)) {
-        return res.status(401).send('Token desformatado');
+        return res.status(401).send({ error: 'Token desformatado' });
     }
 
-    jwt.verify(token, authConfig.JWT_SECRET.AUTH, (err, decoded) => {
+    jwt.verify(token, authConfig.JWT.SECRET, (err, decoded) => {
         if(err) {
-            return res.status(401).send('Token invalido');
+            return res.status(401).send({ error: 'Token invalido' });
         }
 
         req.userId = decoded.id;

@@ -3,7 +3,6 @@ const router = express.Router();
 const authMiddleware = require('../middlewares/auth');
 
 var UserModel = require('../models/user');
-var SeriesModel = require('../models/series');
 
 // router.get('/check/token', authMiddleware, (req, res) => {
 //   return res.status(200).send(true);
