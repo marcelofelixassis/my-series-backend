@@ -11,6 +11,14 @@ const bodyParser = require("body-parser");
 *   cria a aplicação
 */
 const app = express();
+/*
+*   libera acesso externo a pasta public/uploads
+*/
+var publicDir = require('path').resolve('../public/uploads');
+app.use("/public/uploads", express.static(publicDir));
+/*
+*   CORS
+*/
 app.use(cors());
 /*
 *   entender quando estou enviando requisições em json
