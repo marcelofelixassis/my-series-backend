@@ -1,12 +1,11 @@
 const Bookshelf = require('../bookshelf');
-const Group = require('./group');
 
 class User extends Bookshelf.Model{
   
   get tableName() { return 'users'; }
 
   groups() {
-    return this.belongsToMany(Group, 'groups_users');
+    return this.belongsToMany('Group');
   }
 
   static checkEmail(email) {

@@ -23,7 +23,7 @@ var multerFilesFilter = (pathToSave, filesNumber, fileSize) => {
             } 
             return cb(null, true);
         }
-    }).single('imagesGroup');
+    }).single('image');
 
     return upload;
 }
