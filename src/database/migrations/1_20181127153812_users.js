@@ -3,6 +3,7 @@ exports.up = function(knex, Promise) {
         t.increments('id').primary();
         t.string('name', 40).notNullable();
         t.string('email', 40).notNullable();
+        t.string('image', 200);
         t.string('password', 100).notNullable();
         t.string('password_reset_token', 100);
         t.datetime('password_reset_expires');
