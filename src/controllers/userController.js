@@ -8,6 +8,13 @@ var UserModel = require('../models/user');
 const router = express.Router();
 
 /**
+ * USER PROFILE 
+ */
+router.get('/profile', authMiddleware, (req, res) => {
+
+});
+
+/**
  * USER GROUPS
  */
 router.get('/groups', authMiddleware, async (req, res) => {
@@ -50,6 +57,32 @@ router.put('/edit_image', [authMiddleware, multerFilesFilter], (req, res) => {
     });
   } catch (error) {
     return res.status(400).send({ error: "Falha ao editar foto de usuario, tente novamente" });
+  }
+});
+
+/**
+ * REMOVE USER IMAGE
+ */
+router.post('/remove_image', authMiddleware, (req, res) => {
+  try {
+    UserModel.forge().where({ id: req.userId }).fetch({require: true}).then((data) => {
+        if(data.get('image') != '') {
+            const fs = require('fs');
+            pathToRemove = path.resolve('../public/uploads/imagesUser/'+data.get('image'));
+            fs.unlink(pathToRemove, (err) => {
+                if (err) res.status(400).send({ error: "O usuário não possui foto" });
+            });
+        }
+        
+        data.set('image', '');
+        data.save().then(() => {
+            res.send();
+        });
+    }).catch((err) => {
+        res.status(400).send({ error: "Falha buscar usuário, tente novamente" });
+    });
+  } catch (error) {
+    res.status(400).send({ error: "Falha ao remover imagem do usuário, tente novamente" });
   }
 });
 
