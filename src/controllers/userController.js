@@ -1,17 +1,51 @@
 const express = require("express"),
 multerFilesFilter = require('../modules/multer')('../public/uploads/imagesUser/',1,1),
 path = require('path'),
+bcrypt = require('bcryptjs'),
 authMiddleware = require('../middlewares/auth');
 
-var UserModel = require('../models/user');
+var UserModel = require('../models/user'),
+GroupUserModel = require('../models/groups_users');
 
 const router = express.Router();
+
+/**
+ * CHECK USER EXIST BY EMAIL
+ */
+router.post('/check_user_exist_group', authMiddleware, async (req, res) => {
+  const { email, group } = req.body;
+  try {
+    const user = await UserModel.checkEmail(email);
+
+    if(!user) {
+      return res.status(400).send({ error: "E-mail inválido ou incorreto" });
+    }
+
+    const groupUser = await GroupUserModel.checkUserExistGroup(user.get('id'), group);
+    
+    if(groupUser) {
+      return res.status(400).send({ error: "Usuário já pertence ao grupo" });
+    }
+
+    return res.status(200).send({ email:user.get('email'), name:user.get('name') });
+  } catch (error) {
+    return res.status(400).send({ error: "Falha ao checar usuário, tente novamente" });
+  }
+})
 
 /**
  * USER PROFILE 
  */
 router.get('/profile', authMiddleware, (req, res) => {
-
+  try {
+    UserModel.forge().where({ id: req.userId }).fetch({ require:true, columns:['name', 'email', 'image'] }).then((data) => {
+      return res.status(200).json(data);
+    }).catch((err) => {
+      return res.status(400).send({ error: "Falha ao perfil do usuário, tente novamente" });
+    })
+  } catch (error) {
+    return res.status(400).send({ error: "Falha ao perfil do usuário, tente novamente" });
+  }
 });
 
 /**
@@ -20,15 +54,19 @@ router.get('/profile', authMiddleware, (req, res) => {
 router.get('/groups', authMiddleware, async (req, res) => {
   try {
     UserModel.forge({id: req.userId})
-    .fetch({withRelated: ['groups']})
+    .fetch({
+      withRelated: [{'groups': (qb) => {
+        qb.select('groups.*', 'star')
+      }}]
+    })
     .then(function(data) {
-      res.status(200).json(data.related('groups'));
+      return res.status(200).json(data.related('groups'));
     })
     .catch((err) => {
-      res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
+      return res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
     });
   } catch (error) {
-    res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
+    return res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
   }
 });
 
@@ -76,13 +114,13 @@ router.post('/remove_image', authMiddleware, (req, res) => {
         
         data.set('image', '');
         data.save().then(() => {
-            res.send();
+          return res.send();
         });
     }).catch((err) => {
-        res.status(400).send({ error: "Falha buscar usuário, tente novamente" });
+      return res.status(400).send({ error: "Falha buscar usuário, tente novamente" });
     });
   } catch (error) {
-    res.status(400).send({ error: "Falha ao remover imagem do usuário, tente novamente" });
+    return res.status(400).send({ error: "Falha ao remover imagem do usuário, tente novamente" });
   }
 });
 
@@ -121,10 +159,29 @@ router.post('/edit_email', authMiddleware, (req, res) => {
         }
       })
     }).catch((err) => {
-      return res.status(400).send({ error: "Falha ao se registrar, tente novamente" });
+      return res.status(400).send({ error: "Falha ao editar email de usuario, tente novamente" });
     })
   } catch (error) {
-    return res.status(400).send({ error: "Falha ao se registrar, tente novamente" });
+    return res.status(400).send({ error: "Falha ao editar email de usuario, tente novamente" });
+  }
+});
+
+/**
+ * EDIT USER PASSWORD
+ */
+router.post('/edit_password', authMiddleware, (req, res) => {
+  const { password } = req.body;
+  try {
+    UserModel.forge().where({ id: req.userId }).fetch({ require: true }).then((data) => {
+      data.set('password', bcrypt.hashSync(password));
+      data.save().then(() => {
+        return res.send();
+      });
+    }).catch((err) => {
+      return res.status(400).send({ error: "Falha ao editar senha de usuario, tente novamente" });
+    })
+  } catch (error) {
+    return res.status(400).send({ error: "Falha ao editar senha de usuario, tente novamente" });
   }
 });
 

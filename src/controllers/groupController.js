@@ -189,11 +189,7 @@ router.post('/change_star', authMiddleware, (req, res) => {
     const { id } = req.body;
     try {
         GroupUserModel.forge().where({ group_id: id, user_id: req.userId }).fetch({ require: true }).then((data) => {
-            if(data.get('star') == 0) {
-                data.set('star', 1);
-            } else {
-                data.set('star', 0);
-            }
+            data.set('star', !data.get('star'));
             data.save().then(() => {
                 return res.send();
             })
