@@ -4,7 +4,9 @@ multerFilesFilter = require('../modules/multer')('../public/uploads/imagesGroup/
 path = require('path');
 
 var GroupModel = require('../models/group'),
-GroupUserModel = require('../models/groups_users');
+UserModel = require('../models/user'),
+GroupUserModel = require('../models/groups_users'),
+GroupSerieModel = require('../models/groups_series');
 
 const router = express.Router();
 
@@ -24,14 +26,14 @@ router.post('/new',[authMiddleware, multerFilesFilter], async (req, res) => {
                 user_id: req.userId,
                 role_id: 'admin'
             }).save().then(() => {
-                res.send();
+                return res.send();
             });
         })
         .catch((err) => {
-            res.status(400).send({ error: "Falha ao cadastrar grupo, tente novamente" });
+            return res.status(400).send({ error: "Falha ao cadastrar grupo, tente novamente" });
         })
     } catch (error) {
-        res.status(400).send({ error: "Falha ao cadastrar grupo, tente novamente" });
+        return res.status(400).send({ error: "Falha ao cadastrar grupo, tente novamente" });
     }
 });
 
@@ -45,13 +47,13 @@ router.post('/edit', authMiddleware, (req, res) => {
             data.set('name', name);
             data.set('description', description);
             data.save().then(() => {
-                res.send();
+                return res.send();
             })
         }).catch((error) => {
-            res.status(400).send({ error: "O grupo não existe" });
+            return res.status(400).send({ error: "O grupo não existe" });
         })
     } catch (error) {
-        res.status(400).send({ error: "Falha ao editar grupo, tente novamente" });
+        return res.status(400).send({ error: "Falha ao editar grupo, tente novamente" });
     }
 })
 
@@ -66,19 +68,19 @@ router.post('/remove', authMiddleware, (req,res) => {
                 const fs = require('fs');
                 pathToRemove = path.resolve('../public/uploads/imagesGroup/'+data.get('image'));
                 fs.unlink(pathToRemove, (err) => {
-                    if (err) res.status(400).send({ error: "O grupo não possui foto" });
+                    if (err) return res.status(400).send({ error: "O grupo não possui foto" });
                 });
             }
 
             data.destroy().then(async () => {
-                res.send();
+                return res.send();
             });
 
         }).catch((error) => {
-            res.status(400).send({ error: "O grupo não existe" });
+            return res.status(400).send({ error: "O grupo não existe" });
         })
     } catch (error) {
-        res.status(400).send({ error: "Falha ao editar grupo, tente novamente" });
+        return res.status(400).send({ error: "Falha ao editar grupo, tente novamente" });
     }
 });
 
@@ -103,7 +105,7 @@ router.post('/edit_image', [authMiddleware, multerFilesFilter], async (req, res)
             
             data.set('image', req.file.filename);
             data.save().then(() => {
-                res.send();
+                return res.send();
             });
         }).catch((err) => {
             return res.status(400).send({ error: "Falha buscar grupo, tente novamente" });
@@ -123,19 +125,19 @@ router.post('/remove_image', authMiddleware, (req, res) => {
                 const fs = require('fs');
                 pathToRemove = path.resolve('../public/uploads/imagesGroup/'+data.get('image'));
                 fs.unlink(pathToRemove, (err) => {
-                    if (err) res.status(400).send({ error: "O grupo não possui foto" });
+                    if (err) return res.status(400).send({ error: "O grupo não possui foto" });
                 });
             }
             
             data.set('image', '');
             data.save().then(() => {
-                res.send();
+                return res.send();
             });
         }).catch((err) => {
-            res.status(400).send({ error: "Falha buscar grupo, tente novamente" });
+            return res.status(400).send({ error: "Falha buscar grupo, tente novamente" });
         });
     } catch (error) {
-        res.status(400).send({ error: "Falha ao remover imagem do grupo, tente novamente" });
+        return res.status(400).send({ error: "Falha ao remover imagem do grupo, tente novamente" });
     }
 });
 
@@ -151,13 +153,13 @@ router.post('/users', authMiddleware, async (req, res) => {
             }}]
         })
         .then(function(data) {
-          res.status(200).json(data.related('users'));
+            return res.status(200).json(data.related('users'));
         })
         .catch((err) => {
-          res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
+            return res.status(400).send({ error: "Falha ao buscar grupos, tente novamente" });
         });
     } catch (error) {
-      res.status(400).send({ error: "Falha ao buscar usuarios do grupo, tente novamente" });
+        return res.status(400).send({ error: "Falha ao buscar usuarios do grupo, tente novamente" });
     }
 });
 
@@ -165,11 +167,17 @@ router.post('/users', authMiddleware, async (req, res) => {
  * ADD USER TO GROUP
  */
 router.post('/add_user', authMiddleware, async (req, res) => {
-    const { group, user } = req.body;
+    const { group, email } = req.body;
     try {
+        const user = await UserModel.checkEmail(email);
+
+        if(!user) {
+            return res.status(400).send({ error: "E-mail inválido ou incorreto" });
+        }
+
         GroupUserModel.forge(
             {group_id: group,
-            user_id: user,
+            user_id: user.get('id'),
             role_id: "member",
             star: 0}
         ).save().then(() => {
@@ -198,6 +206,72 @@ router.post('/change_star', authMiddleware, (req, res) => {
         })
     } catch (error) {
         return res.status(400).send({ error: "Falha ao mudar estrela ao grupo, tente novamente" });
+    }
+});
+
+/**
+ * ALL SERIES
+ */
+router.post('/all_series', authMiddleware, (req, res) => {
+    try {
+        GroupModel.forge(req.body)
+        .fetch({ 
+            withRelated: 'series'
+        })
+        .then(function(data) {
+          return res.status(200).json(data.related('series'));
+        })
+        .catch((err) => {
+            return res.status(400).send({ error: "Falha ao buscar series, tente novamente" });
+        });
+    } catch (error) {
+        return res.status(400).send({ error: "Falha ao buscar series do grupo, tente novamente" });
+    }
+})
+
+/** 
+ * ADD SERIE TO A GROUP
+*/
+router.post('/add_serie', authMiddleware, async (req, res) => {
+    const { serie, group, score } = req.body;
+    try {
+        const serieGroup = await GroupSerieModel.checkSerieExistGroup(serie, group);
+
+        if(serieGroup) {
+            return res.status(400).send({ error: "Essa serie já foi adicionada ao grupo, tente novamente" });
+        }
+
+        GroupSerieModel.forge(
+            {group_id: group,
+            serie_id: serie,
+            score:score,}
+        ).save().then(() => {
+           return res.send()
+        }).catch((err) => {
+            return res.status(400).send({ error: "Falha ao adicionar serie ao grupo, tente novamente" });
+        })
+
+    } catch (error) {
+        return res.status(400).send({ error: "Falha ao adicionar serie ao grupo, tente novamente" });
+    }
+})
+
+/**
+ * REMOVE SERIE FROM GROUP
+ */
+router.post('/serie_remove', authMiddleware, (req,res) => {
+    try {
+        GroupSerieModel.forge().where(req.body).fetch({require: true}).then((data) => {
+
+            data.destroy().then(async () => {
+                return res.send();
+            });
+
+        }).catch((error) => {
+            return res.status(400).send({ error: "A serie não está no grupo" });
+        })
+    } catch (error) {
+        return res.status(400).send({ error: "Falha ao remover serie do grupo, tente novamente" });
     }
 });
 

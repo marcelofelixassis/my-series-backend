@@ -15,6 +15,7 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
   const user = UserModel.forge(req.body);
   user.set('password', bcrypt.hashSync(user.get('password')));
+  user.set('image', '');
   user.save().then(() => {
     return res.send();
   }).catch((err) => {

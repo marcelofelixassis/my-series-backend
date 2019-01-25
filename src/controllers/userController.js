@@ -27,7 +27,7 @@ router.post('/check_user_exist_group', authMiddleware, async (req, res) => {
       return res.status(400).send({ error: "Usuário já pertence ao grupo" });
     }
 
-    return res.status(200).send({ email:user.get('email'), name:user.get('name') });
+    return res.status(200).send({ email:user.get('email'), name:user.get('name'), image:user.get('image') });
   } catch (error) {
     return res.status(400).send({ error: "Falha ao checar usuário, tente novamente" });
   }

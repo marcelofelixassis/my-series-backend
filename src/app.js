@@ -32,6 +32,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 require("./controllers/authController")(app);
 require("./controllers/userController")(app);
 require("./controllers/groupController")(app);
+require("./controllers/serieController")(app);
 
 app.listen(3000, () => {
     console.log("marcelo")
