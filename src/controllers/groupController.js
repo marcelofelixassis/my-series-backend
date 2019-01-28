@@ -216,7 +216,9 @@ router.post('/all_series', authMiddleware, (req, res) => {
     try {
         GroupModel.forge(req.body)
         .fetch({ 
-            withRelated: 'series'
+            withRelated: [{'series': (qb) => {
+                qb.select('series.*', 'score');
+            }}]
         })
         .then(function(data) {
           return res.status(200).json(data.related('series'));
